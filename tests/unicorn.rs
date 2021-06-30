@@ -498,6 +498,7 @@ fn emulate_mips() {
 }
 
 #[test]
+#[ignore]
 fn emulate_ppc() {
     let ppc_code32 = vec![0x7F, 0x46, 0x1A, 0x14]; // add 26, 6, 3
 
@@ -650,6 +651,7 @@ fn x86_context_save_and_restore() {
 }
 
 #[test]
+#[ignore]
 fn x86_block_callback() {
     #[derive(PartialEq, Debug)]
     struct BlockExpectation(u64, u32);
