@@ -13,13 +13,16 @@ fn main() {
 
     Command::new("git")
         .arg("clone")
-        .arg("https://github.com/unicorn-engine/unicorn")
+        .arg("git@github.com:wtdcode/unicorn2.git") // TODO: Change it to the official repo.
         .arg("-b")
         .arg(version)
         .arg(&unicorn_dir)
         .output()
         .expect("Fail to clone Unicorn repository.");
 
+    let unicorn_dir = format!("{}/unicorn2", unicorn_dir); // TODO: Remove this line after release.
+
+    // We don't use TARGET since we can't cross-build.
     if env::consts::OS == "windows" {
         // Windows
         let mut platform = "x64";
@@ -45,16 +48,36 @@ fn main() {
         );
     } else {
         // Most Unix-like systems
-        let mut cmd = Command::new("sh");
-        cmd.current_dir(&unicorn_dir).arg("make.sh");
+        let mut cmd = Command::new("cmake");
+        cmd.current_dir(&unicorn_dir)
+            .arg("-B")
+            .arg("rust_build")
+            .arg("-DUNICORN_BUILD_SHARED=off");
 
         if profile == "debug" {
-            cmd.env("UNICORN_DEBUG", "yes");
+            cmd.arg("-DCMAKE_BUILD_TYPE=Debug");
+        } else {
+            cmd.arg("-DCMAKE_BUILD_TYPE=Release");
         }
 
-        cmd.output().expect("Fail to build unicorn on *nix.");
+        cmd.output()
+            .expect("Fail to create build directory on *nix.");
+
+        Command::new("make")
+            .current_dir(format!("{}/rust_build", &unicorn_dir))
+            .arg("-j6")
+            .output()
+            .expect("Fail to build unicorn on *nix.");
 
         println!("cargo:rustc-link-lib=unicorn");
-        println!("cargo:rustc-link-search={}", unicorn_dir);
+        for arch in [
+            "x86_64", "arm", "armeb", "aarch64", "aarch64eb", "riscv32", "riscv64", "mips",
+            "mipsel", "mips64", "mips64el", "sparc", "sparc64", "m68k", "ppc", "ppc64",
+        ]
+        .iter()
+        {
+            println!("cargo:rustc-link-lib={}-softmmu", arch);
+        }
+        println!("cargo:rustc-link-search={}/rust_build", unicorn_dir);
     }
 }
