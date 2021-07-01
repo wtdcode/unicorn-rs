@@ -78,6 +78,7 @@ fn main() {
         {
             println!("cargo:rustc-link-lib={}-softmmu", arch);
         }
+        println!("cargo:rustc-link-lib=unicorn-common");
         println!("cargo:rustc-link-search={}/rust_build", unicorn_dir);
     }
 }
