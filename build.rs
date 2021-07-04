@@ -20,6 +20,7 @@ fn main() {
         .output()
         .expect("Fail to clone Unicorn repository.");
 
+    println!("cargo:rerun-if-changed={}", &unicorn_dir);
     let unicorn_dir = format!("{}/unicorn2", unicorn_dir); // TODO: Remove this line after release.
 
     // We don't use TARGET since we can't cross-build.
@@ -68,11 +69,27 @@ fn main() {
             .arg("-j6")
             .output()
             .expect("Fail to build unicorn on *nix.");
-
+        // This is a workaround for Unicorn static link since libunicorn.a is also linked again lib*-softmmu.a.
+        // Static libs is just a bundle of objects files. The link relation defined in CMakeLists is only
+        // valid within the cmake project scope and cmake would help link again sub static libs automatically.
         println!("cargo:rustc-link-lib=unicorn");
         for arch in [
-            "x86_64", "arm", "armeb", "aarch64", "aarch64eb", "riscv32", "riscv64", "mips",
-            "mipsel", "mips64", "mips64el", "sparc", "sparc64", "m68k", "ppc", "ppc64",
+            "x86_64",
+            "arm",
+            "armeb",
+            "aarch64",
+            "aarch64eb",
+            "riscv32",
+            "riscv64",
+            "mips",
+            "mipsel",
+            "mips64",
+            "mips64el",
+            "sparc",
+            "sparc64",
+            "m68k",
+            "ppc",
+            "ppc64",
         ]
         .iter()
         {
