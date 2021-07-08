@@ -278,9 +278,14 @@ fn x86_mem_callback() {
 
     let callback_mems = mems_cell.clone();
     let callback =
-        move |_: Unicorn<'_>, mem_type: MemType, address: u64, size: usize, value: i64| {
+        move |uc: Unicorn<'_>, mem_type: MemType, address: u64, size: usize, value: i64| {
             let mut mems = callback_mems.borrow_mut();
+            let mut uc = uc;
             mems.push(MemExpectation(mem_type, address, size, value));
+
+            if mem_type == MemType::READ_UNMAPPED {
+                uc.mem_map(address, 0x1000, Permission::ALL).unwrap();
+            }
         };
 
     // mov eax, 0xdeadbeef;
@@ -307,7 +312,7 @@ fn x86_mem_callback() {
             10 * SECOND_SCALE,
             0x1000
         ),
-        Err(uc_error::READ_UNMAPPED)
+        Ok(())
     );
 
     assert_eq!(expects, *mems_cell.borrow());
